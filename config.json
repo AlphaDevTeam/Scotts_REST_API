@@ -1,0 +1,24 @@
+{
+  userName: 'sa',
+  password: 'digital',
+  server: '127.0.0.1',
+
+  // If you're on Windows Azure, you will need this:
+  options:
+ { database: 'NewRathna',
+   textsize: '2147483647',
+   connectTimeout: 15000,
+   requestTimeout: 15000,
+   cancelTimeout: 5000,
+   packetSize: 4096,
+   tdsVersion: '7_1',
+   isolationLevel: 2,
+   encrypt: false,
+   cryptoCredentialsDetails: {},
+   useUTC: true,
+   useColumnNames: false,
+   connectionIsolationLevel: 2,
+   readOnlyIntent: false,
+   enableAnsiNullDefault: true,
+   port: 1433 }
+}

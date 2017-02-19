@@ -1,0 +1,20 @@
+{
+  "name": "scottsrestapi",
+  "version": "1.0.0",
+  "description": "Rest API for Scottsw",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node Server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "md5": "^2.2.1",
+    "mssql": "^3.3.0",
+    "tedious": "^1.14.0",
+    "tedious-promises": "^0.4.1"
+  }
+}
