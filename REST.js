@@ -94,6 +94,57 @@ REST_ROUTER.prototype.handleRoutes= function(router,connection,md5) {
       });
     });
 
+
+    router.get("/chequesInFloat",function(req,res){
+      console.log("Get Genaric");
+      var url = req.originalUrl;
+      //console.log(req);
+      console.log("URL : " + url);
+      console.log(req.query);
+      var searchURL = JSON.parse(JSON.stringify(req._parsedUrl.search))
+      console.log("Search " + searchURL);
+      url = url.replace(searchURL,'');
+      var urlParts = url.split('/');
+      var tableName = urlParts[2];
+      var reqID = 0;
+      if(urlParts.length > 3){
+        reqID = urlParts[3];
+      }
+      //tp.sql("SELECT Sum(Amount) as Float From ReceivedCheques WHERE (Status =1)").execute()
+      getXDataWithParamSQL("SELECT Sum(Amount) as resultValue FROM ","ReceivedCheques",req.query)
+      .then(function(results) {
+        res.json({"Error" : false, "Message" : "Success", results });
+      }).fail(function(err) {
+        res.json({"Error" : true, "Message" : "Error executing MySQL query"});
+      });
+    });
+
+    router.get("/fetchWithParam/*",function(req,res){
+      console.log("fetchWithParam");
+      var url = req.originalUrl;
+      //console.log(req);
+      console.log("URL : " + url);
+      console.log(req.query);
+      var searchURL = JSON.parse(JSON.stringify(req._parsedUrl.search))
+      console.log("Search " + searchURL);
+      url = url.replace(searchURL,'');
+      var urlParts = url.split('/');
+      var methodName = urlParts[2];
+      var requestFields = urlParts[3];
+      var tableName = urlParts[4];
+      var fieldNameAs = urlParts[5];
+
+      //tp.sql("SELECT Sum(Amount) as Float From ReceivedCheques WHERE (Status =1)").execute()
+      console.log("SELECT " + requestFields + " as " + fieldNameAs + " FROM " + tableName + req.query);
+      getXDataWithParamSQL("SELECT " + requestFields + " as " + fieldNameAs + " FROM ",tableName,req.query)
+      .then(function(results) {
+        res.json({"Error" : false, "Message" : "Success", results });
+      }).fail(function(err) {
+        res.json({"Error" : true, "Message" : "Error executing MySQL query"});
+      });
+    });
+
+
     router.get("/*",function(req,res){
       console.log("Get Genaric");
       var url = req.originalUrl;
@@ -149,12 +200,78 @@ function getTopXData( topX, tableName) {
 
 function getXDataWithParam(tableName,parameters) {
   var paramQuery ="";
+  var betweenParamQuery ="";
   for (var key in parameters) {
-    if (parameters.hasOwnProperty(key)) {
+    console.log('Process : ' + key);
+    if(key ==='between' || key === 'from' || key ==='to'){
+      if(hasValue(parameters['between']) &&  hasValue(parameters['to']) && hasValue(parameters['from'])){
+        betweenParamQuery = parameters['between'] + ' BETWEEN ' + parameters['from'] + ' AND ' + parameters['to'];
+      }
+    }else if(paramQuery === ""){
       paramQuery = paramQuery + key + " = " + parameters[key];
+    }else{
+      paramQuery = paramQuery +  " AND " + key + " = " + parameters[key] ;
     }
   }
-  var sqlQ = "SELECT * FROM " + tableName + " WHERE " + paramQuery + " ORDER BY 1 ";
+
+  if(betweenParamQuery != "" && paramQuery == ""){
+    betweenParamQuery = " " + betweenParamQuery;
+  }else if (betweenParamQuery != "" && paramQuery != "") {
+    betweenParamQuery = " AND " + betweenParamQuery;
+  }
+
+  var sqlQ = "SELECT * FROM " + tableName + " WHERE " +  paramQuery + betweenParamQuery + " ORDER BY 1 ";
+  console.log(sqlQ);
+  return tp.sql(sqlQ).execute();
+}
+
+function hasValue(objectToCheck){
+  console.log("objectToCheck:" + objectToCheck);
+  if(objectToCheck !=null && objectToCheck != "" && objectToCheck != "undifined" && objectToCheck != "'Invalid Date'"){
+    return true;
+  }else{
+    return false;
+  }
+}
+
+function getXDataWithParamSQL(sql,tableName,parameters) {
+  var paramQuery ="";
+  var betweenParamQuery ="";
+  var orParamQuery ="";
+  for (var key in parameters) {
+    console.log('Process : ' + key);
+    if(key ==='between' || key === 'from' || key ==='to'){
+      if(hasValue(parameters['between']) &&  hasValue(parameters['to']) && hasValue(parameters['from'])){
+        betweenParamQuery = parameters['between'] + ' BETWEEN ' + parameters['from'] + ' AND ' + parameters['to'];
+      }
+    }else if(parameters[key].split('|').length > 1){
+      var splitList = parameters[key].split('|');
+      for(var orValue in splitList){
+        if(orParamQuery === ""){
+          orParamQuery = orParamQuery + " ( " + key + " = " + splitList[orValue] ;
+        }else{
+          orParamQuery = orParamQuery + " OR " +  key + " = " + splitList[orValue] ;
+        }
+      }
+      orParamQuery = orParamQuery +  " ) ";
+    }else if(paramQuery === ""){
+      paramQuery = paramQuery + key + " = " + parameters[key];
+    }else{
+      paramQuery = paramQuery +  " AND " + key + " = " + parameters[key] ;
+    }
+  }
+
+  if(betweenParamQuery != "" && paramQuery == ""){
+    betweenParamQuery = " " + betweenParamQuery;
+  }else if (betweenParamQuery != "" && paramQuery != "") {
+    betweenParamQuery = " AND " + betweenParamQuery;
+  }
+
+  if((paramQuery + betweenParamQuery) != "" && orParamQuery != ""){
+      orParamQuery = "  AND " + orParamQuery;
+  }
+
+  var sqlQ = sql + " " + tableName + " WHERE " + paramQuery + betweenParamQuery + orParamQuery + " ORDER BY 1 ";
   console.log(sqlQ);
   return tp.sql(sqlQ).execute();
 }
