@@ -94,6 +94,30 @@ REST_ROUTER.prototype.handleRoutes= function(router,connection,md5) {
       });
     });
 
+    router.get("/remainingBalance",function(req,res){
+      console.log("remainingBalance");
+      var url = req.originalUrl;
+      //console.log(req);
+      console.log("URL : " + url);
+      console.log(req.query);
+      var searchURL = JSON.parse(JSON.stringify(req._parsedUrl.search))
+      console.log("Search " + searchURL);
+      url = url.replace(searchURL,'');
+      var urlParts = url.split('/');
+      var tableName = urlParts[2];
+      var reqID = 0;
+      if(urlParts.length > 3){
+        reqID = urlParts[3];
+      }
+      //tp.sql("SELECT Sum(Amount) as Float From ReceivedCheques WHERE (Status =1)").execute()
+      getDataWithSQL("",req.query)
+      .then(function(results) {
+        res.json({"Error" : false, "Message" : "Success", results });
+      }).fail(function(err) {
+        res.json({"Error" : true, "Message" : "Error executing MySQL query"});
+      });
+    });
+
 
     router.get("/chequesInFloat",function(req,res){
       console.log("Get Genaric");
@@ -285,6 +309,17 @@ function getDataWithParam(tableName,parameters) {
   }
   console.log("Params Debug : " + "SELECT * FROM " + tableName + " WHERE " + paramQuery);
   return tp.sql("SELECT * FROM " + tableName + " WHERE " + paramQuery ).execute();
+}
+
+function getDataWithSQL(tableName,parameters) {
+  var paramQuery ="";
+  for (var key in parameters) {
+    if (parameters.hasOwnProperty(key)) {
+      paramQuery = paramQuery + key + " = " + parameters[key];
+    }
+  }
+  console.log("Fix me : " + " SELECT (Customer.CreditLimit - CustomerBalance.BalanceAmount ) AS resultValue FROM CustomerBalance INNER JOIN Customer ON CustomerBalance.CustomerID = Customer.CustomerID " + " WHERE " + paramQuery);
+  return tp.sql("SELECT (Customer.CreditLimit - CustomerBalance.BalanceAmount ) AS resultValue FROM CustomerBalance INNER JOIN Customer ON CustomerBalance.CustomerID = Customer.CustomerID " + " WHERE " + paramQuery ).execute();
 }
 
 module.exports = REST_ROUTER;
